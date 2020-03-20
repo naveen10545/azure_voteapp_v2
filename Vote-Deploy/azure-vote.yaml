@@ -1,12 +1,9 @@
-apiVersion: apps/v1
+apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: azure-vote-back
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: azure-vote-back
   template:
     metadata:
       labels:
@@ -17,13 +14,6 @@ spec:
       containers:
       - name: azure-vote-back
         image: redis
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 250m
-            memory: 256Mi
         ports:
         - containerPort: 6379
           name: redis
@@ -38,15 +28,17 @@ spec:
   selector:
     app: azure-vote-back
 ---
-apiVersion: apps/v1
+apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: azure-vote-front
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: azure-vote-front
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
   template:
     metadata:
       labels:
@@ -56,17 +48,14 @@ spec:
         "beta.kubernetes.io/os": linux
       containers:
       - name: azure-vote-front
-        #image: scopcomcr.acr.io/vote-app:latest
-        image: microsoft/azure-vote-front:V1
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 250m
-            memory: 256Mi
+        image: microsoft/azure-vote-front:v1
         ports:
         - containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
         env:
         - name: REDIS
           value: "azure-vote-back"
